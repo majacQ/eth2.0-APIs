@@ -1,6 +1,7 @@
 get:
   operationId: getPoolAttestations
   summary: Get Attestations from operations pool
+  deprecated: true
   description: Retrieves attestations known by the node but not necessarily incorporated into any block
   parameters:
     - name: slot
@@ -23,6 +24,7 @@ get:
           schema:
             title: GetPoolAttestationsResponse
             type: object
+            required: [data]
             properties:
               data:
                 type: array
@@ -33,17 +35,17 @@ get:
       content:
         application/json:
           schema:
-            allOf:
-              - $ref: "../../../beacon-node-oapi.yaml#/components/schemas/ErrorMessage"
-              - example:
-                  code: 400
-                  message: "Invalid slot: current"
+            $ref: "../../../beacon-node-oapi.yaml#/components/schemas/ErrorMessage"
+          example:
+            code: 400
+            message: "Invalid slot: current"
     "500":
       $ref: '../../../beacon-node-oapi.yaml#/components/responses/InternalError'
 
 post:
   operationId: submitPoolAttestations
   summary: Submit Attestation objects to node
+  deprecated: true
   description: |
     Submits Attestation objects to the node.  Each attestation in the request body is processed individually.
     
