@@ -1,7 +1,7 @@
 get:
   operationId: getForkSchedule
   summary: Get scheduled upcoming forks.
-  description: Retrieve all scheduled upcoming forks this node is aware of.
+  description: Retrieve all forks, past present and future, of which this node is aware.
   tags:
     - Config
   responses:
@@ -12,6 +12,7 @@ get:
           schema:
             title: GetForkScheduleResponse
             type: object
+            required: [data]
             properties:
               data:
                 type: array
