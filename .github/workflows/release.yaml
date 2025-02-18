@@ -4,57 +4,66 @@ on:
   push:
     tags:
       - "v*"
+      - "!v*-alpha.*"
+      - "!v*-beta.*"
+      - "!v*-rc.*"
 
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+      - run: npm i -g @apidevtools/swagger-cli@4
+      - name: Update Spec version
+        run: "sed -i 's/version: \"Dev/version: \"${{ github.ref_name }}/' ./beacon-node-oapi.yaml"
       - name: Bundle yaml spec
-        uses: mpetrunic/swagger-cli-action@v1.0.0
-        with:
-          command: "bundle ./beacon-node-oapi.yaml -r -t yaml -o ./deploy/beacon-node-oapi.yaml"
+        run: "swagger-cli bundle ./beacon-node-oapi.yaml -r -t yaml -o ./deploy/beacon-node-oapi.yaml"
       - name: Bundle json spec
-        uses: mpetrunic/swagger-cli-action@v1.0.0
+        run: "swagger-cli bundle ./beacon-node-oapi.yaml -r -t json -o ./deploy/beacon-node-oapi.json"
+      - name: Update index.html
+        run: |
+          sed -i "/urls:/a \          {url: \"./releases/${{ github.ref_name }}/beacon-node-oapi.json\", name: \"${{ github.ref_name }}\"}," ./index.html
+      - name: Update Changelog
+        run: |
+          sed -i "s/## Development Version/## ${{ github.ref_name }}/" ./CHANGES.md
+          awk '/# Recent Changes/ {print; print ""; system("cat .github/changes-template.md"); next}1' CHANGES.md > temp && mv temp CHANGES.md
+      - name: Create Release Notes
+        run: |
+          echo "The following changes are included in this release:" > release-notes.md
+          awk '/^## ${{ github.ref_name }}/ {flag=1; next} /^## / {flag=0} flag { \
+          if ($0 ~ /\| \[#/) {sub(/^\| /, "- "); sub(/\| .*$/, ""); sub(/[[:space:]]+$/, ""); print}}' CHANGES.md >> release-notes.md
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
         with:
-          command: "bundle ./beacon-node-oapi.yaml -r -t json -o ./deploy/beacon-node-oapi.json"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Release ${{ github.ref_name }}"
+          branch: release-${{ github.ref_name }}
+          title: "Release ${{ github.ref_name }}"
+          body-path: "release-notes.md"
+          base: master
+          add-paths: index.html,CHANGES.md
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
+        uses: softprops/action-gh-release@v2
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          name: ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          body_path: "release-notes.md"
           draft: false
           prerelease: false
-      - name: Upload Yaml Bundle
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./deploy/beacon-node-oapi.yaml
-          asset_name: beacon-node-oapi.yaml
-          asset_content_type: text/x-yaml
-      - name: Upload Json Bundle
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./deploy/beacon-node-oapi.json
-          asset_name: beacon-node-oapi.json
-          asset_content_type: application/json
+          files: |
+            ./deploy/beacon-node-oapi.yaml
+            ./deploy/beacon-node-oapi.json
+          fail_on_unmatched_files: true
       - name: Rollback Release
         if: failure()
-        uses: author/action-rollback@stable
+        uses: author/action-rollback@1.0.4
         with:
-          # Using a known release ID
-          id: ${{ steps.create_release.id }}
-          # Using a tag name
+          release_id: ${{ steps.create_release.outputs.id }}
           tag: ${{ github.ref }}
-          # Always delete} the tag, even if a release is not associated with it.
-          always_delete_tag: true
+          delete_orphan_tag: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

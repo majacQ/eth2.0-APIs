@@ -12,11 +12,12 @@ get:
           schema:
             title: GetPoolProposerSlashingsResponse
             type: object
+            required: [data]
             properties:
               data:
                 type: array
                 items:
-                  $ref: '../../../beacon-node-oapi.yaml#/components/schemas/ProposerSlashing'
+                  $ref: '../../../beacon-node-oapi.yaml#/components/schemas/Phase0.ProposerSlashing'
     "500":
       $ref: '../../../beacon-node-oapi.yaml#/components/responses/InternalError'
 
@@ -31,7 +32,7 @@ post:
     content:
       application/json:
         schema:
-          $ref: '../../../beacon-node-oapi.yaml#/components/schemas/ProposerSlashing'
+          $ref: '../../../beacon-node-oapi.yaml#/components/schemas/Phase0.ProposerSlashing'
   responses:
     "200":
       description: Success
@@ -40,10 +41,9 @@ post:
       content:
         application/json:
           schema:
-            allOf:
-              - $ref: "../../../beacon-node-oapi.yaml#/components/schemas/ErrorMessage"
-              - example:
-                  code: 400
-                  message: "Invalid proposer slashing, it will never pass validation so it's rejected"
+            $ref: "../../../beacon-node-oapi.yaml#/components/schemas/ErrorMessage"
+          example:
+            code: 400
+            message: "Invalid proposer slashing, it will never pass validation so it's rejected"
     "500":
       $ref: '../../../beacon-node-oapi.yaml#/components/responses/InternalError'

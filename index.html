@@ -3,13 +3,14 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8">
-    <title>Eth2.0-API</title>
+    <title>Beacon-API</title>
     <link rel="stylesheet" type="text/css" href="./dist/swagger-ui.css" >
     <link rel="stylesheet" type="text/css" href="./dist/theme-material.css" >
     <style>
-      .topbar-wrapper img[alt="Swagger UI"] {
+      .swagger-ui .topbar-wrapper a {
         content: url("./assets/ethereum_logo.png");
         height: 68px; /* Width of new image */
+        max-width: 40px;
       }
     </style>
     <link rel="icon" type="image/png" href="./dist/favicon-32x32.png" sizes="32x32" />
@@ -47,14 +48,21 @@
       // Begin Swagger UI call region
       const ui = SwaggerUIBundle({
         urls: [
-          {url: "./beacon-node-oapi.yaml", name: "dev"},
-          {url: "https://github.com/ethereum/eth2.0-APIs/releases/download/v1/beacon-node-oapi.yaml", name: "v1"}
+          {url: "./releases/v3.0.0/beacon-node-oapi.json", name: "v3.0.0"},
+          {url: "./releases/v2.5.0/beacon-node-oapi.json", name: "v2.5.0"},
+          {url: "./releases/v2.4.2/beacon-node-oapi.json", name: "v2.4.2"},
+          {url: "./releases/v2.4.1/beacon-node-oapi.json", name: "v2.4.1"},
+          {url: "./releases/v2.4.0/beacon-node-oapi.json", name: "v2.4.0"},
+          {url: "./releases/v2.3.0/beacon-node-oapi.json", name: "v2.3.0"},
+          {url: "./releases/v2.2.0/beacon-node-oapi.json", name: "v2.2.0"},
+          {url: "./beacon-node-oapi.yaml", name: "dev"}
         ],
         basePath: "/",
         dom_id: '#swagger-ui',
         displayRequestDuration: true,
         deepLinking: true,
         docExpansion: "none",
+        queryConfigEnabled: "true",
         presets: [
           SwaggerUIBundle.presets.apis,
           SwaggerUIStandalonePreset
@@ -62,13 +70,7 @@
         plugins: [
           SwaggerUIBundle.plugins.DownloadUrl
         ],
-        layout: "StandaloneLayout",
-        requestInterceptor: function() {
-          if(this.url.startsWith("http")) {
-            this.url = "https://api.allorigins.win/raw?url=" + this.url; // will change the URL used.
-          }
-          return this;
-        }
+        layout: "StandaloneLayout"
    })
       // End Swagger UI call region
 

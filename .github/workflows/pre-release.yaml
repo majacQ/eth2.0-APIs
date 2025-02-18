@@ -1,0 +1,51 @@
+name: Pre-release
+
+on:
+  push:
+    tags:
+      - "v*-alpha.*"
+      - "v*-beta.*"
+      - "v*-rc.*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+      - run: npm i -g @apidevtools/swagger-cli@4
+      - name: Update Spec version
+        run: "sed -i 's/version: \"Dev/version: \"${{ github.ref_name }}/' ./beacon-node-oapi.yaml"
+      - name: Bundle yaml spec
+        run: "swagger-cli bundle ./beacon-node-oapi.yaml -r -t yaml -o ./deploy/beacon-node-oapi.yaml"
+      - name: Bundle json spec
+        run: "swagger-cli bundle ./beacon-node-oapi.yaml -r -t json -o ./deploy/beacon-node-oapi.json"
+      - name: Create Release Notes
+        run: |
+          echo "The following changes are included in this release:" > release-notes.md
+          awk '/^## Development Version/ {flag=1; next} /^## / {flag=0} flag { \
+          if ($0 ~ /\| \[#/) {sub(/^\| /, "- "); sub(/\| .*$/, ""); sub(/[[:space:]]+$/, ""); print}}' CHANGES.md >> release-notes.md
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          name: ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          body_path: "release-notes.md"
+          draft: false
+          prerelease: true
+          files: |
+            ./deploy/beacon-node-oapi.yaml
+            ./deploy/beacon-node-oapi.json
+          fail_on_unmatched_files: true
+      - name: Rollback Release
+        if: failure()
+        uses: author/action-rollback@1.0.4
+        with:
+          release_id: ${{ steps.create_release.outputs.id }}
+          tag: ${{ github.ref }}
+          delete_orphan_tag: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

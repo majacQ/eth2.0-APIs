@@ -1,32 +1,63 @@
 # API specific types
 
+DepositSnapshotResponse:
+  type: object
+  required: [finalized, deposit_root, deposit_count, execution_block_hash, execution_block_height]
+  properties:
+    finalized:
+      type: array
+      items:
+        $ref: './primitive.yaml#/Root'
+      minItems: 0
+      maxItems: 32
+    deposit_root:
+      $ref: './primitive.yaml#/Root'
+    deposit_count:
+      $ref: './primitive.yaml#/Uint64'
+    execution_block_hash:
+      $ref: './primitive.yaml#/Root'
+    execution_block_height:
+      $ref: './primitive.yaml#/Uint64'
+
 ValidatorResponse:
   type: object
+  required: [index, balance, status, validator]
   properties:
     index:
-      allOf:
-        - $ref: './primitive.yaml#/Uint64'
-        - description: "Index of validator in validator registry."
+      $ref: './primitive.yaml#/Uint64'
+      description: "Index of validator in validator registry."
     balance:
-      allOf:
-        - $ref: "./primitive.yaml#/Gwei"
-        - description: "Current validator balance in gwei."
+      $ref: "./primitive.yaml#/Gwei"
+      description: "Current validator balance in gwei."
     status:
       $ref: "#/ValidatorStatus"
     validator:
-      $ref: "./validator.yaml#/Validator"
+      $ref: "./phase0/validator.yaml#/Phase0/Validator"
 
 ValidatorBalanceResponse:
   type: object
+  required: [index, balance]
   properties:
     index:
-      allOf:
-        - $ref: './primitive.yaml#/Uint64'
-        - description: "Index of validator in validator registry."
+      $ref: './primitive.yaml#/Uint64'
+      description: "Index of validator in validator registry."
     balance:
-      allOf:
-        - $ref: "./primitive.yaml#/Gwei"
-        - description: "Current validator balance in gwei."
+      $ref: "./primitive.yaml#/Gwei"
+      description: "Current validator balance in gwei."
+
+ValidatorIdentityResponse:
+  type: object
+  required: [index, pubkey, activation_epoch]
+  properties:
+    index:
+      $ref: './primitive.yaml#/Uint64'
+      description: "Index of validator in validator registry."
+    pubkey:
+      $ref: './primitive.yaml#/Pubkey'
+      description: "Public key of validator."
+    activation_epoch:
+      $ref: "./primitive.yaml#/Uint64"
+      description: "Epoch when validator activated. 'FAR_FUTURE_EPOCH' if not activated"
 
 ValidatorStatus:
   description: |
@@ -36,8 +67,8 @@ ValidatorStatus:
     - **active_ongoing** - When validator must be attesting, and have not initiated any exit.
     - **active_exiting** - When validator is still active, but filed a voluntary request to exit.
     - **active_slashed** - When validator is still active, but have a slashed status and is scheduled to exit.
-    - **exited_unslashed** - When validator has reached reguler exit epoch, not being slashed, and doesn't have to attest any more, but cannot withdraw yet.
-    - **exited_slashed** - When validator has reached reguler exit epoch, but was slashed, have to wait for a longer withdrawal period.
+    - **exited_unslashed** - When validator has reached regular exit epoch, not being slashed, and doesn't have to attest any more, but cannot withdraw yet.
+    - **exited_slashed** - When validator has reached regular exit epoch, but was slashed, have to wait for a longer withdrawal period.
     - **withdrawal_possible** - After validator has exited, a while later is permitted to move funds, and is truly out of the system.
     - **withdrawal_done** - (not possible in phase0, except slashing full balance) - actually having moved funds away
 
@@ -49,11 +80,11 @@ ValidatorStatus:
 Committee:
   description: Group of validators assigned to attest at specific slot and that have the same committee index (shard in phase 1)
   type: object
+  required: [index, slot, validators]
   properties:
     index:
-      allOf:
-        - $ref: './primitive.yaml#/Uint64'
-        - description: Committee index at a slot
+      $ref: './primitive.yaml#/Uint64'
+      description: Committee index at a slot
     slot:
       $ref: './primitive.yaml#/Uint64'
 
@@ -62,3 +93,8 @@ Committee:
       description: "List of validator indices assigned to this committee"
       items:
         $ref: './primitive.yaml#/Uint64'
+
+BroadcastValidation:
+  description: Level of validation that must be applied to a block before it is broadcast.
+  type: string
+  enum: [gossip, consensus, consensus_and_equivocation]

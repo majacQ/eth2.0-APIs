@@ -13,9 +13,11 @@
             schema:
               type: object
               title: GetGenesisResponse
+              required: [data]
               properties:
                 data:
                   type: object
+                  required: [genesis_time, genesis_validators_root, genesis_fork_version]
                   properties:
                     genesis_time:
                       $ref: '../../beacon-node-oapi.yaml#/components/schemas/GenesisTime'
@@ -28,10 +30,9 @@
         content:
           application/json:
             schema:
-              allOf:
-                - $ref: "../../beacon-node-oapi.yaml#/components/schemas/ErrorMessage"
-                - example:
-                    code: 404
-                    message: "Chain genesis info is not yet known"
+              $ref: "../../beacon-node-oapi.yaml#/components/schemas/ErrorMessage"
+            example:
+              code: 404
+              message: "Chain genesis info is not yet known"
       "500":
         $ref: '../../beacon-node-oapi.yaml#/components/responses/InternalError'
